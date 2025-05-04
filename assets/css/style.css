@@ -27,6 +27,49 @@
     --text-light: #858796;
 }
 
+/* Ethiopian calendar styles */
+.ethiopian-calendar .date-display {
+    font-family: 'Abyssinica SIL', 'GF Zemen Unicode', sans-serif;
+}
+
+/* Calendar switcher */
+.calendar-switcher {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 15px;
+}
+
+.calendar-switcher .form-check {
+    margin-bottom: 0;
+}
+
+/* Ethiopian month names in selects */
+.ethiopian-month-option {
+    font-family: 'Abyssinica SIL', 'GF Zemen Unicode', sans-serif;
+}
+
+/* Ethiopian calendar specific styles */
+.ethiopian-date {
+    font-family: 'Abyssinica SIL', 'GF Zemen Unicode', sans-serif;
+}
+
+.calendar-switcher {
+    display: inline-block;
+    margin-left: 15px;
+}
+
+.calendar-switcher .form-check-label {
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+/* Ethiopian calendar table styles */
+table.ethiopian-calendar th {
+    font-family: 'Abyssinica SIL', 'GF Zemen Unicode', sans-serif;
+    font-size: 0.9em;
+}
+
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f8f9fa;
