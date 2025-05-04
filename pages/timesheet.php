@@ -182,7 +182,8 @@ if ($currentTimesheet) {
                             <select class="form-select" id="month-selector">
                                 <?php for ($m = 1; $m <= 12; $m++): ?>
                                     <option value="<?= $m ?>" <?= $m == $month ? 'selected' : '' ?>>
-                                        <?= $translation->getMonthName($m) ?>
+                                        <!--= $translation->getMonthName($m) -->
+                                        <?= date('F', mktime(0, 0, 0, $m, 1)) ?>
                                     </option>
                                 <?php endfor; ?>
                             </select>
