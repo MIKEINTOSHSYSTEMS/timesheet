@@ -1,0 +1,388 @@
+/*
+
+                :root {
+                    --primary-color: #4e73df;
+                    --secondary-color: #f8f9fc;
+        
+                }
+        
+                .navbar {
+                    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+                    padding: 0.5rem 0;
+                    background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%) !important;
+                }
+*/
+
+
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2c3e50;
+    --success-color: #2ecc71;
+    --danger-color: #e74c3c;
+    --light-color: #ecf0f1;
+    --dark-color: #2c3e50;
+    --timesheet-color: #0097b3;
+    --accent-color: #2e59d9;
+    --text-dark: #5a5c69;
+    --text-light: #858796;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/*
+.navbar {
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    padding: 0.5rem 0;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%) !important;
+}
+*/
+
+.navbar {
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    padding: 0.5rem 0;
+    background: linear-gradient(135deg, #000c14 0%, var(--accent-color) 100%) !important;
+}
+
+
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.2rem;
+    padding: 0.5rem 0;
+}
+
+.navbar-brand i {
+    margin-right: 0.5rem;
+    font-size: 1.3rem;
+}
+
+.nav-link {
+    font-weight: 500;
+    padding: 0.5rem 1rem !important;
+    border-radius: 0.35rem;
+    margin: 0 0.15rem;
+    transition: all 0.2s;
+}
+
+.nav-link:hover,
+.nav-link:focus {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-link i {
+    margin-right: 0.4rem;
+    font-size: 1rem;
+}
+
+
+/* User profile dropdown adjustments */
+.navbar-nav .nav-item.dropdown {
+    margin-left: 0.5rem;
+}
+
+/* Ensure proper spacing between navbar items */
+.navbar-nav .nav-item:not(:last-child) {
+    margin-right: 0.25rem;
+}
+
+
+/* Mobile view adjustments */
+@media (max-width: 991.98px) {
+    .nav-special-item {
+        padding: 0.5rem;
+        margin: 0.25rem 0;
+        width: 100%;
+    }
+
+    .nav-special-item .form-select {
+        max-width: 100%;
+    }
+
+    .navbar-nav .nav-item.dropdown {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    border-radius: 0.35rem;
+    padding: 0.5rem;
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+}
+
+.dropdown-item i {
+    width: 1.25rem;
+    text-align: center;
+    margin-right: 0.75rem;
+}
+
+.navbar-toggler {
+    border: none;
+    padding: 0.5rem;
+}
+
+.navbar-toggler:focus {
+    box-shadow: none;
+}
+
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        padding: 1rem 0;
+    }
+
+    .nav-link {
+        margin: 0.25rem 0;
+        padding: 0.75rem 1rem !important;
+    }
+
+    .dropdown-menu {
+        box-shadow: none;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        margin-left: 1rem;
+    }
+}
+
+/* Navbar special items (language/calendar switchers) */
+.nav-special-item {
+    display: flex;
+    align-items: center;
+    padding: 0 0.5rem;
+    margin-right: 0.5rem;
+}
+
+/* Make the select elements more compact */
+
+.nav-special-item .form-select {
+    max-width: 120px;
+        /* Reduced from full width */
+    font-size: 0.8rem;
+    padding: 0.25rem 1.5rem 0.25rem 0.5rem;
+    background-color: rgb(0 151 179);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    height: calc(1.5em + 0.5rem);
+}
+
+
+.form-select-sm {
+    font-size: 0.875rem;
+    padding: 0.25rem 1.75rem 0.25rem 0.75rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.form-select-sm:focus {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: rgb(12, 233, 233);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.form-select-sm option {
+    color: var(--text-dark);
+}
+
+.bg-primary {
+    --bs-bg-opacity: 1;
+    background-color: #00a7cf !important;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.table th {
+    background-color: var(--timesheet-color);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+/* Timesheet specific styles */
+.hours-input {
+    width: 60px;
+    text-align: center;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+/* Language switcher */
+.language-switcher {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+/* Calendar switcher */
+.calendar-switcher {
+    margin-bottom: 20px;
+}
+
+/* Timesheet specific styles */
+.hours-input {
+    width: 60px;
+    text-align: center;
+    padding: 0.25rem;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+.table th {
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+    font-weight: bold;
+}
+
+.text-success {
+    color: #28a745 !important;
+    font-weight: bold;
+}
+
+/* Calendar and language switchers */
+.calendar-switcher, .language-switcher {
+    max-width: 300px;
+    margin-bottom: 1rem;
+}
+
+/* Add these styles to your style.css */
+
+/* Compact language switcher */
+.language-switcher .form-select {
+    width: auto;
+    min-width: 70px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+}
+
+.language-switcher .form-select:focus {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Compact calendar switcher */
+.calendar-switcher .form-check-input {
+    cursor: pointer;
+}
+
+.calendar-switcher .form-check-label {
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+/* Better spacing for navbar items */
+.navbar-nav .nav-item {
+    margin: 0 0.25rem;
+}
+
+/* Mobile view adjustments */
+@media (max-width: 991.98px) {
+
+    .language-switcher,
+    .calendar-switcher {
+        padding: 0.5rem 0;
+    }
+
+    .language-switcher .form-select {
+        width: 100%;
+    }
+}
+
+/* Footer Styles */
+.footer {
+    background: linear-gradient(135deg, var(--dark-color) 0%, var(--secondary-color) 100%);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer a {
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer a:hover {
+    color: white !important;
+}
+
+.footer .list-unstyled li {
+    padding: 0.25rem 0;
+}
+
+/* Footer switchers */
+.footer .language-switcher,
+.footer .calendar-switcher {
+    max-width: 200px;
+    margin-bottom: 1rem;
+}
+
+.footer .form-select {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.footer .form-check-label {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Footer Language Selector Styles */
+.footer .language-switcher {
+    max-width: 100%;
+}
+
+.footer .language-switcher .form-select {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+}
+
+.footer .language-switcher .form-select:focus {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.1);
+}
+
+.footer .language-switcher label {
+    display: block;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
