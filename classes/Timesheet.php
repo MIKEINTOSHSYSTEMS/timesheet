@@ -1,4 +1,8 @@
 <?php
+require_once __DIR__ . '/../classes/DateConverter.php';
+require_once __DIR__ . '/../classes/CalendarHelper.php';
+CalendarHelper::init();
+$currentDate = CalendarHelper::getCurrentDate();
 class Timesheet
 {
     private $db;
@@ -50,6 +54,13 @@ class Timesheet
 
     public function getTimesheet($user_id, $month, $year)
     {
+        // Convert from Ethiopian to Gregorian if needed
+        if (CalendarHelper::isEthiopian()) {
+            $ethiopianDate = "$year-$month-01";
+            $gregorianDate = DateConverter::toGregorian($ethiopianDate);
+            list($year, $month) = explode('-', $gregorianDate);
+        }
+
         $pdo = (new Database())->getConnection();
 
         // Fetch timesheet details
@@ -85,6 +96,13 @@ class Timesheet
         $stmt->execute([$timesheet['timesheet_id']]);
         $timesheet['entries'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // Convert dates back to Ethiopian if needed
+        if (CalendarHelper::isEthiopian()) {
+            $timesheet['month'] = DateConverter::toEthiopian("$year-{$timesheet['month']}-01");
+            $timesheet['month'] = explode('-', $timesheet['month'])[1];
+            $timesheet['year'] = explode('-', $timesheet['month'])[0];
+        }
+
         return $timesheet;
     }
 
@@ -113,6 +131,13 @@ class Timesheet
 
     public function saveTimesheet($data, $user_id, $month, $year)
     {
+        // Convert from Ethiopian to Gregorian if needed
+        if (CalendarHelper::isEthiopian()) {
+            $ethiopianDate = "$year-$month-01";
+            $gregorianDate = DateConverter::toGregorian($ethiopianDate);
+            list($year, $month) = explode('-', $gregorianDate);
+        }
+
         $pdo = $this->db->getConnection();
 
         try {

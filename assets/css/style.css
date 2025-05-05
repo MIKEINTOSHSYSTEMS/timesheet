@@ -429,3 +429,35 @@ body {
     font-size: 0.9rem;
     margin-bottom: 0.5rem;
 }
+
+/* Ethiopian calendar specific styles */
+.ethiopian-calendar .date-display {
+    direction: ltr;
+    /* Ensure dates display correctly */
+    font-family: 'Noto Sans Ethiopic', sans-serif;
+}
+
+/* Calendar table styles */
+.calendar-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.calendar-table th {
+    background-color: #f2f2f2;
+    text-align: center;
+    padding: 8px;
+    border: 1px solid #ddd;
+}
+
+.calendar-table td {
+    text-align: center;
+    padding: 8px;
+    border: 1px solid #ddd;
+}
+
+/* Ethiopian month/year picker styles */
+.ethiopian-month-picker,
+.ethiopian-year-picker {
+    font-family: 'Noto Sans Ethiopic', sans-serif;
+}

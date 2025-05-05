@@ -111,6 +111,12 @@ header('Expires: 0');
 // Function to get day name
 function getDayName($year, $month, $day)
 {
+    if (CalendarHelper::isEthiopian()) {
+        $ethiopianDays = ["እሁድ", "ሰኞ", "ማክሰኞ", "ረቡዕ", "ሐሙስ", "ዓርብ", "ቅዳሜ"];
+        $timestamp = mktime(0, 0, 0, $month, $day, $year);
+        $dayOfWeek = date('w', $timestamp);
+        return $ethiopianDays[$dayOfWeek] ?? '';
+    }
     return date('D', mktime(0, 0, 0, $month, $day, $year));
 }
 

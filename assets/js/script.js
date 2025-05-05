@@ -58,4 +58,63 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+    function convertToEthiopian(dateStr) {
+        const date = new Date(dateStr);
+        const ec = new EthiopianCalendar(date);
+        return {
+            date: ec.GetECDate('Y-m-d'),
+            year: ec.EC_year,
+            month: ec.EC_month,
+            day: ec.EC_day
+        };
+    }
+
+    function convertToGregorian(ethDateStr) {
+        const parts = ethDateStr.split('-');
+        const ecYear = parseInt(parts[0]);
+        const ecMonth = parseInt(parts[1]);
+        const ecDay = parseInt(parts[2]);
+
+        const ec = new EthiopianCalendar(new Date());
+        const gcDate = ec.ethiopianToGregorian(ecYear, ecMonth, ecDay);
+
+        // Format as YYYY-MM-DD
+        const gcDateStr = `${gcDate.year}-${gcDate.month.toString().padStart(2, '0')}-${gcDate.day.toString().padStart(2, '0')}`;
+        return {
+            date: gcDateStr,
+            year: gcDate.year,
+            month: gcDate.month,
+            day: gcDate.day
+        };
+    }
+
+    // Helper function to update all date displays on the page
+    function updateDateDisplays() {
+        document.querySelectorAll('[data-date]').forEach(element => {
+            const dateStr = element.getAttribute('data-date');
+            if (document.body.classList.contains('ethiopian-calendar')) {
+                const ethDate = convertToEthiopian(dateStr);
+                element.textContent = ethDate.date;
+                element.classList.add('ethiopian-text');
+            } else {
+                // For Gregorian, just display as-is
+                element.textContent = dateStr;
+                element.classList.remove('ethiopian-text');
+            }
+        });
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        updateDateDisplays();
+
+        // Update when calendar switch is toggled
+        const calendarSwitch = document.getElementById('calendarSwitch');
+        if (calendarSwitch) {
+            calendarSwitch.addEventListener('change', function () {
+                updateDateDisplays();
+            });
+        }
+    });
+
 });

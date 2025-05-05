@@ -5,8 +5,8 @@ require_once __DIR__ . '/../includes/header.php';
 
 $user = (new User())->getUserById($_SESSION['user_id']);
 $timesheet = new Timesheet();
-$currentMonth = date('n');
-$currentYear = date('Y');
+$currentMonth = DateConverter::getCurrentMonth();
+$currentYear = DateConverter::getCurrentYear();
 
 // Handle filter parameters
 $filterMonth = isset($_GET['month']) ? (int)$_GET['month'] : null;
@@ -24,7 +24,6 @@ $currentTimesheet = $timesheet->getTimesheet($_SESSION['user_id'], $currentMonth
 
     <div class="row">
         <div class="col-md-4">
-            <!-- User Profile Card (keep existing) -->
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">User Profile</h5>
@@ -33,11 +32,11 @@ $currentTimesheet = $timesheet->getTimesheet($_SESSION['user_id'], $currentMonth
                     <p><strong>Name:</strong> <?= e($user['first_name'] . ' ' . $user['last_name']) ?></p>
                     <p><strong>Email:</strong> <?= e($user['email']) ?></p>
                     <p><strong>Role:</strong> <?= ucfirst(e($user['role'])) ?></p>
+                    <p><strong>Current Date:</strong> <?= DateConverter::formatDate(date('Y-m-d')) ?></p>
                     <a href="<?= BASE_URL ?>/pages/profile.php" class="btn btn-sm btn-outline-primary">Edit Profile</a>
                 </div>
             </div>
 
-            <!-- Timesheet Filter Card -->
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">Timesheet Filters</h5>
@@ -48,9 +47,9 @@ $currentTimesheet = $timesheet->getTimesheet($_SESSION['user_id'], $currentMonth
                             <label for="month" class="form-label">Month</label>
                             <select class="form-select" id="month" name="month">
                                 <option value="">All Months</option>
-                                <?php for ($m = 1; $m <= 12; $m++): ?>
+                                <?php for ($m = 1; $m <= (CalendarHelper::isEthiopian() ? 13 : 12); $m++): ?>
                                     <option value="<?= $m ?>" <?= $filterMonth === $m ? 'selected' : '' ?>>
-                                        <?= date('F', mktime(0, 0, 0, $m, 1)) ?>
+                                        <?= CalendarHelper::getMonthName($m) ?>
                                     </option>
                                 <?php endfor; ?>
                             </select>
@@ -59,7 +58,9 @@ $currentTimesheet = $timesheet->getTimesheet($_SESSION['user_id'], $currentMonth
                             <label for="year" class="form-label">Year</label>
                             <select class="form-select" id="year" name="year">
                                 <option value="">All Years</option>
-                                <?php for ($y = date('Y') - 5; $y <= date('Y') + 1; $y++): ?>
+                                <?php
+                                $currentYear = CalendarHelper::isEthiopian() ? DateConverter::getCurrentYear() : date('Y');
+                                for ($y = $currentYear - 5; $y <= $currentYear + 1; $y++): ?>
                                     <option value="<?= $y ?>" <?= $filterYear === $y ? 'selected' : '' ?>><?= $y ?></option>
                                 <?php endfor; ?>
                             </select>
@@ -72,7 +73,6 @@ $currentTimesheet = $timesheet->getTimesheet($_SESSION['user_id'], $currentMonth
         </div>
 
         <div class="col-md-8">
-            <!-- Current Month Timesheet Card (keep existing) -->
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">Current Month Timesheet</h5>
@@ -84,7 +84,7 @@ $currentTimesheet = $timesheet->getTimesheet($_SESSION['user_id'], $currentMonth
                                                 ?>">
                             <strong>Status:</strong> <?= ucfirst($currentTimesheet['status']) ?>
                             <?php if ($currentTimesheet['status'] === 'approved' && $currentTimesheet['approved_at']): ?>
-                                <br><small>Approved on: <?= date('M j, Y', strtotime($currentTimesheet['approved_at'])) ?></small>
+                                <br><small>Approved on: <?= DateConverter::formatDate($currentTimesheet['approved_at'], 'M j, Y') ?></small>
                             <?php endif; ?>
                         </div>
 
@@ -112,7 +112,6 @@ $currentTimesheet = $timesheet->getTimesheet($_SESSION['user_id'], $currentMonth
                 </div>
             </div>
 
-            <!-- All Timesheets Card -->
             <div class="card">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">All Timesheets</h5>
@@ -135,7 +134,7 @@ $currentTimesheet = $timesheet->getTimesheet($_SESSION['user_id'], $currentMonth
                                         $canEdit = $timesheet->canEditTimesheet($ts['timesheet_id'], $_SESSION['user_id'], $user['role'] === 'admin');
                                     ?>
                                         <tr>
-                                            <td><?= date('F', mktime(0, 0, 0, $ts['month'], 1)) ?></td>
+                                            <td><?= CalendarHelper::getMonthName($ts['month']) ?></td>
                                             <td><?= $ts['year'] ?></td>
                                             <td>
                                                 <span class="badge bg-<?=

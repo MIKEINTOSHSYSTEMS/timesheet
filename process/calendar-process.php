@@ -26,13 +26,19 @@ try {
             ");
             $stmt->execute([$ethiopianCalendar, $_SESSION['user_id']]);
         }
+
+        // Set current date in the selected calendar
+        require_once __DIR__ . '/../classes/DateConverter.php';
+        require_once __DIR__ . '/../classes/CalendarHelper.php';
+        CalendarHelper::init();
+        $currentDate = CalendarHelper::getCurrentDate();
     }
 
     // Safely get redirect URL
     if (isset($_POST['redirect'])) {
         $redirect = filter_var($_POST['redirect'], FILTER_SANITIZE_URL);
         // Ensure the redirect stays within our domain
-        if (!str_starts_with($redirect, BASE_URL)) {
+        if (strpos($redirect, BASE_URL) !== 0) {
             $redirect = BASE_URL . '/pages/dashboard.php';
         }
     }
@@ -40,6 +46,10 @@ try {
     error_log("Calendar switch error: " . $e->getMessage());
     $_SESSION['error_message'] = 'Failed to update calendar preference';
 }
+
+header('Location: ' . $redirect);
+exit;
+?>
 
 header('Location: ' . $redirect);
 exit;

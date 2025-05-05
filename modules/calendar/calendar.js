@@ -298,4 +298,71 @@ class EthiopianCalendar {
         }
         return cal;
     }
+    // Add these new methods for reverse conversion
+    ethiopianToGregorian(ecYear, ecMonth, ecDay) {
+        // Handle Pagume (13th month) first
+        if (ecMonth === 13) {
+            const isLeapYear = (ecYear % 4) === 3;
+            const pagumeDays = isLeapYear ? 6 : 5;
+
+            if (ecDay <= pagumeDays) {
+                // These days correspond to September in Gregorian
+                return {
+                    year: ecYear + 7,
+                    month: 9,
+                    day: 11 + ecDay - (isLeapYear ? 1 : 0)
+                };
+            }
+        }
+
+        // Calculate the Gregorian month and day
+        let gcMonth, gcDay;
+        const monthDiff = this.MonthDifference;
+
+        if (ecMonth >= 1 && ecMonth <= 4) {
+            gcMonth = ecMonth + 8;
+            gcDay = ecDay + this.MonthDifference[gcMonth - 1];
+        } else if (ecMonth >= 5 && ecMonth <= 12) {
+            gcMonth = ecMonth - 4;
+
+            // Handle February leap year case
+            if (gcMonth === 2) {
+                const isLeapYear = ((ecYear + 8) % 4 === 0 && (ecYear + 8) % 100 !== 0) || (ecYear + 8) % 400 === 0;
+                gcDay = ecDay + (isLeapYear ? monthDiff[gcMonth - 1][1] : monthDiff[gcMonth - 1][0]);
+            } else {
+                gcDay = ecDay + (Array.isArray(monthDiff[gcMonth - 1]) ?
+                    monthDiff[gcMonth - 1][0] :
+                    monthDiff[gcMonth - 1]);
+            }
+        }
+
+        // Adjust if day exceeds month length
+        const monthLength = this.GCMonthLength(gcMonth, ecYear + 8);
+        if (gcDay > monthLength) {
+            gcDay -= monthLength;
+            gcMonth++;
+        }
+
+        // Adjust year if necessary
+        let gcYear = ecYear + 8;
+        if (gcMonth > 12) {
+            gcMonth -= 12;
+            gcYear++;
+        }
+
+        return {
+            year: gcYear,
+            month: gcMonth,
+            day: gcDay
+        };
+    }
+
+    // Helper method to get Gregorian month length
+    GCMonthLength(month, year) {
+        if (month === 2) {
+            const isLeap = ((year % 4 === 0) && (year % 100 !== 0)) || (year % 400 === 0);
+            return isLeap ? 29 : 28;
+        }
+        return this.GregorianMonthLength[month - 1];
+    }
 }

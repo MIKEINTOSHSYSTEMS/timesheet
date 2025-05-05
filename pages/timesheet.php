@@ -9,22 +9,20 @@ $user_id = $_SESSION['user_id'];
 $timesheet = new Timesheet();
 $translation = new Translation();
 
-// Get current month/year or from request
-$month = isset($_GET['month']) ? (int)$_GET['month'] : date('n');
-$year = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
+// Get current month/year or from request - convert if Ethiopian calendar is enabled
+$month = isset($_GET['month']) ? (int)$_GET['month'] : DateConverter::getCurrentMonth();
+$year = isset($_GET['year']) ? (int)$_GET['year'] : DateConverter::getCurrentYear();
 
 // Get existing timesheet data FIRST
 $currentTimesheet = $timesheet->getTimesheet($user_id, $month, $year);
 $currentEntries = [];
-$canSubmit = true; // Flag to control submission
+$canSubmit = true;
 
 if ($currentTimesheet) {
-    // Create a more accessible structure for entries
     foreach ($currentTimesheet['entries'] ?? [] as $entry) {
         $currentEntries[$entry['project_id']] = $entry;
     }
 
-    // Check if already submitted
     if ($currentTimesheet['status'] === 'submitted' || $currentTimesheet['status'] === 'approved') {
         $canSubmit = false;
         $_SESSION['info_message'] = 'You have already submitted this timesheet';
@@ -40,7 +38,7 @@ if ((new Timesheet())->isFutureTimesheet($month, $year) && $_SESSION['user_role'
 
 // Check if editing is allowed
 $canEdit = $timesheet->canEditTimesheet(
-    $currentTimesheet['timesheet_id'] ?? null, // Now this variable exists
+    $currentTimesheet['timesheet_id'] ?? null,
     $user_id,
     $_SESSION['user_role'] === 'admin'
 );
@@ -69,76 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-
-
-// Get user's projects
-//$projects = $timesheet->getUserProjects($user_id);
-
-// Handle form submission
-/*
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $result = $timesheet->saveTimesheet($_POST, $user_id, $month, $year);
-    if ($result) {
-        $_SESSION['success_message'] = 'Timesheet saved successfully';
-        //header("Location: timesheet.php?month=$month&year=$year");
-        // To this (using double quotes for variable interpolation):
-        header("Location: " . BASE_URL . "/pages/timesheet.php?month=$month&year=$year");
-        exit;
-    }
-}
-*/
-
-/*
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $result = $timesheet->saveTimesheet($_POST, $user_id, $month, $year);
-    if ($result) {
-        $_SESSION['success_message'] = 'Timesheet saved successfully';
-        // Make sure no output has been sent before this
-        if (!headers_sent()) {
-            header("Location: " . BASE_URL . "/pages/timesheet.php?month=$month&year=$year");
-            exit;
-        } else {
-            echo '<script>window.location.href="' . BASE_URL . '/pages/timesheet.php?month=' . $month . '&year=' . $year . '";</script>';
-            exit;
-        }
-    }
-}
-
-*/
-
-// Get days in month
-$daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
-
-// Get existing entries if they exist
-/*
-$currentTimesheet = $timesheet->getTimesheet($user_id, $month, $year);
-$currentEntries = [];
-
-if ($currentTimesheet) {
-    // Create a more accessible structure for entries
-    foreach ($currentTimesheet['entries'] ?? [] as $entry) {
-        $currentEntries[$entry['project_id']] = $entry;
-    }
-}
-*/
-
-// After getting current timesheet data
-$currentTimesheet = $timesheet->getTimesheet($user_id, $month, $year);
-$currentEntries = [];
-$canSubmit = true; // Flag to control submission
-
-if ($currentTimesheet) {
-    // Create a more accessible structure for entries
-    foreach ($currentTimesheet['entries'] ?? [] as $entry) {
-        $currentEntries[$entry['project_id']] = $entry;
-    }
-
-    // Check if already submitted
-    if ($currentTimesheet['status'] === 'submitted' || $currentTimesheet['status'] === 'approved') {
-        $canSubmit = false;
-        $_SESSION['info_message'] = 'You have already submitted this timesheet';
-    }
-}
+// Get days in month - using CalendarHelper for Ethiopian support
+$daysInMonth = CalendarHelper::getDaysInMonth($month, $year);
 ?>
 
 <div class="container-fluid">
@@ -158,16 +88,15 @@ if ($currentTimesheet) {
                                         ?> mb-4">
                     <strong>Status:</strong> <?= ucfirst($currentTimesheet['status']) ?>
                     <?php if ($currentTimesheet['submitted_at']): ?>
-                        <br><small>Submitted on: <?= date('M j, Y H:i', strtotime($currentTimesheet['submitted_at'])) ?></small>
+                        <br><small>Submitted on: <?= DateConverter::formatDate($currentTimesheet['submitted_at'], 'M j, Y H:i') ?></small>
                     <?php endif; ?>
                     <?php if ($currentTimesheet['approved_at']): ?>
-                        <br><small>Approved on: <?= date('M j, Y H:i', strtotime($currentTimesheet['approved_at'])) ?></small>
+                        <br><small>Approved on: <?= DateConverter::formatDate($currentTimesheet['approved_at'], 'M j, Y H:i') ?></small>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
 
             <?php if (empty($projects)): ?>
-
                 <div class="alert alert-warning">
                     No projects assigned to you. Please contact your administrator.
                 </div>
@@ -180,10 +109,9 @@ if ($currentTimesheet) {
                         <div class="col-md-6">
                             <label class="form-label">Month:</label>
                             <select class="form-select" id="month-selector">
-                                <?php for ($m = 1; $m <= 12; $m++): ?>
+                                <?php for ($m = 1; $m <= (CalendarHelper::isEthiopian() ? 13 : 12); $m++): ?>
                                     <option value="<?= $m ?>" <?= $m == $month ? 'selected' : '' ?>>
-                                        <!--= $translation->getMonthName($m) -->
-                                        <?= date('F', mktime(0, 0, 0, $m, 1)) ?>
+                                        <?= CalendarHelper::getMonthName($m, $year) ?>
                                     </option>
                                 <?php endfor; ?>
                             </select>
@@ -191,7 +119,9 @@ if ($currentTimesheet) {
                         <div class="col-md-6">
                             <label class="form-label">Year:</label>
                             <select class="form-select" id="year-selector">
-                                <?php for ($y = $year - 5; $y <= $year + 5; $y++): ?>
+                                <?php
+                                $currentYear = CalendarHelper::isEthiopian() ? DateConverter::getCurrentYear() : date('Y');
+                                for ($y = $currentYear - 5; $y <= $currentYear + 5; $y++): ?>
                                     <option value="<?= $y ?>" <?= $y == $year ? 'selected' : '' ?>><?= $y ?></option>
                                 <?php endfor; ?>
                             </select>
@@ -206,7 +136,7 @@ if ($currentTimesheet) {
                                     <?php for ($day = 1; $day <= $daysInMonth; $day++): ?>
                                         <th class="text-center">
                                             <?= $day ?><br>
-                                            <small><?= date('D', strtotime("$year-$month-$day")) ?></small>
+                                            <small><?= CalendarHelper::getDayName($day, $month, $year) ?></small>
                                         </th>
                                     <?php endfor; ?>
                                     <th>Total Hours</th>
