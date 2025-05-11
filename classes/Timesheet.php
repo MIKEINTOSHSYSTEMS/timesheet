@@ -17,7 +17,7 @@ class Timesheet
     {
         $pdo = $this->db->getConnection();
 
-        // Get timesheet with original calendar values
+        // Remove calendar type filter from query to find any matching timesheet
         $stmt = $pdo->prepare("
             SELECT t.*, 
                    SUM(te.total_hours) AS total_hours,
@@ -69,6 +69,13 @@ class Timesheet
         return $stmt->fetchAll();
     }
 
+    public function getLeaveTypes()
+    {
+        $pdo = $this->db->getConnection();
+        $stmt = $pdo->query("SELECT * FROM leave_types WHERE is_active = 1");
+        return $stmt->fetchAll();
+    }
+
     public function saveTimesheet($data, $user_id, $month, $year, $is_admin = false)
     {
         $calendarType = CalendarHelper::isEthiopian() ? 'ethiopian' : 'gregorian';
@@ -100,20 +107,19 @@ class Timesheet
                 $timesheet_id = $existing['timesheet_id'];
                 $status = isset($data['action']) && $data['action'] === 'submit' ? 'submitted' : $existing['status'];
 
-                // Only allow status change from draft to submitted
-                if ($existing['status'] === 'draft' && $status === 'submitted') {
-                    $stmt = $pdo->prepare("
-                        UPDATE timesheets SET status = ?, submitted_at = NOW()
-                        WHERE timesheet_id = ?
-                    ");
-                    $stmt->execute([$status, $timesheet_id]);
-                }
+                // Update existing timesheet
+                $stmt = $pdo->prepare("
+                    UPDATE timesheets 
+                    SET status = ?, updated_at = NOW()
+                    WHERE timesheet_id = ?
+                ");
+                $stmt->execute([$status, $timesheet_id]);
             } else {
                 $status = isset($data['action']) && $data['action'] === 'submit' ? 'submitted' : 'draft';
 
                 $stmt = $pdo->prepare("
-                    INSERT INTO timesheets (user_id, month, year, calendar_type, status)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO timesheets (user_id, month, year, calendar_type, status, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, NOW(), NOW())
                 ");
                 $stmt->execute([$user_id, $month, $year, $calendarType, $status]);
                 $timesheet_id = $pdo->lastInsertId();
@@ -168,6 +174,16 @@ class Timesheet
                 }
             }
 
+            // Update timesheet status if submitted
+            if (isset($data['action']) && $data['action'] === 'submit') {
+                $stmt = $pdo->prepare("
+                    UPDATE timesheets 
+                    SET status = 'submitted', submitted_at = NOW(), updated_at = NOW()
+                    WHERE timesheet_id = ?
+                ");
+                $stmt->execute([$timesheet_id]);
+            }
+
             $pdo->commit();
             return true;
         } catch (Exception $e) {
@@ -178,20 +194,167 @@ class Timesheet
         }
     }
 
+    public function getTimesheetCompletion($timesheet_id)
+    {
+        $pdo = $this->db->getConnection();
+
+        // Get total allocated hours
+        $stmt = $pdo->prepare("
+            SELECT SUM(pa.hours_allocated) as allocated_hours
+            FROM project_allocations pa
+            JOIN timesheets t ON pa.user_id = t.user_id
+            WHERE t.timesheet_id = ?
+            AND (t.month BETWEEN MONTH(pa.start_date) AND MONTH(pa.end_date))
+            AND (t.year BETWEEN YEAR(pa.start_date) AND YEAR(pa.end_date))
+        ");
+        $stmt->execute([$timesheet_id]);
+        $allocated = $stmt->fetchColumn();
+
+        // Get total logged hours
+        $stmt = $pdo->prepare("
+            SELECT SUM(total_hours) as logged_hours
+            FROM timesheet_entries
+            WHERE timesheet_id = ?
+        ");
+        $stmt->execute([$timesheet_id]);
+        $logged = $stmt->fetchColumn();
+
+        return [
+            'allocated_hours' => $allocated ?? 0,
+            'logged_hours' => $logged ?? 0,
+            'completion_percentage' => $allocated > 0 ? round(($logged / $allocated) * 100, 2) : 0
+        ];
+    }
+
+    public function getSubmittedTimesheets($user_id)
+    {
+        $pdo = $this->db->getConnection();
+
+        $stmt = $pdo->prepare("
+            SELECT t.*, SUM(te.total_hours) as total_hours
+            FROM timesheets t
+            LEFT JOIN timesheet_entries te ON t.timesheet_id = te.timesheet_id
+            WHERE t.user_id = ? AND t.status IN ('submitted', 'approved')
+            GROUP BY t.timesheet_id
+            ORDER BY t.year DESC, t.month DESC
+        ");
+        $stmt->execute([$user_id]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function approveTimesheet($timesheet_id, $approver_id)
+    {
+        $pdo = $this->db->getConnection();
+        $stmt = $pdo->prepare("
+            UPDATE timesheets 
+            SET status = 'approved', 
+                approved_at = NOW(), 
+                approved_by = ?,
+                rejection_reason = NULL,
+                updated_at = NOW()
+            WHERE timesheet_id = ?
+        ");
+        return $stmt->execute([$approver_id, $timesheet_id]);
+    }
+
+    public function rejectTimesheet($timesheet_id, $reason)
+    {
+        $pdo = $this->db->getConnection();
+        $stmt = $pdo->prepare("
+            UPDATE timesheets 
+            SET status = 'rejected', 
+                approved_at = NULL,
+                approved_by = NULL,
+                rejection_reason = ?,
+                updated_at = NOW()
+            WHERE timesheet_id = ?
+        ");
+        return $stmt->execute([$reason, $timesheet_id]);
+    }
+
+    public function getTimesheetDetails($timesheet_id)
+    {
+        $pdo = $this->db->getConnection();
+        $stmt = $pdo->prepare("
+            SELECT ts.*, u.first_name, u.last_name, u.role 
+            FROM timesheets ts
+            JOIN users u ON ts.user_id = u.user_id
+            WHERE ts.timesheet_id = ?
+        ");
+        $stmt->execute([$timesheet_id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function hasSubmittedTimesheet($user_id, $month, $year)
+    {
+        $pdo = $this->db->getConnection();
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) FROM timesheets 
+            WHERE user_id = ? AND month = ? AND year = ? AND status = 'submitted'
+        ");
+        $stmt->execute([$user_id, $month, $year]);
+        return $stmt->fetchColumn() > 0;
+    }
+
+    public function getAllUserTimesheets($user_id, $month = null, $year = null)
+    {
+        $pdo = $this->db->getConnection();
+        $currentCalendar = CalendarHelper::isEthiopian() ? 'ethiopian' : 'gregorian';
+
+        $sql = "
+            SELECT t.*, 
+                   SUM(te.total_hours) as total_hours,
+                   u.first_name, u.last_name
+            FROM timesheets t
+            LEFT JOIN timesheet_entries te ON t.timesheet_id = te.timesheet_id
+            LEFT JOIN users u ON t.user_id = u.user_id
+            WHERE t.user_id = ?
+        ";
+
+        $params = [$user_id];
+
+        if ($month !== null && $year !== null) {
+            // Add calendar type condition to the query
+            $sql .= " AND t.calendar_type = ?";
+            $params[] = $currentCalendar;
+
+            $sql .= " AND t.month = ? AND t.year = ?";
+            $params[] = $month;
+            $params[] = $year;
+        }
+
+        $sql .= " GROUP BY t.timesheet_id ORDER BY t.year DESC, t.month DESC";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+
+        $timesheets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Convert display values without changing stored values
+        foreach ($timesheets as &$ts) {
+            $display = CalendarHelper::getDisplayDate(
+                $ts['month'],
+                $ts['year'],
+                $ts['calendar_type']
+            );
+            $ts['display_month'] = $display['month'];
+            $ts['display_year'] = $display['year'];
+            $ts['display_month_name'] = $display['month_name'];
+        }
+
+        return $timesheets;
+    }
+
     public function canEditTimesheet($timesheet_id, $user_id, $is_admin = false)
     {
         if ($is_admin) {
             return true; // Admins can always edit
         }
 
-        // Allow creation of new timesheets
-        if (!$timesheet_id) {
-            return true;
-        }
-
         $pdo = $this->db->getConnection();
 
-        // Get timesheet details
+        // Get timesheet details including month/year and status
         $stmt = $pdo->prepare("
             SELECT t.month, t.year, t.status, t.user_id, t.calendar_type 
             FROM timesheets t
@@ -204,24 +367,33 @@ class Timesheet
             return false; // Not the owner
         }
 
-        // Only allow editing of draft timesheets
+        // Cannot edit submitted/approved timesheets
         if ($timesheet['status'] !== 'draft') {
             return false;
         }
 
-        // Allow editing of current and past timesheets
-        return !$this->isFutureTimesheet($timesheet['month'], $timesheet['year'], $timesheet['calendar_type']);
+        // Check if this is a future timesheet (no editing allowed for non-admins)
+        if ($this->isFutureTimesheet($timesheet['month'], $timesheet['year'], $timesheet['calendar_type'])) {
+            return false;
+        }
+
+        // For past timesheets, allow editing within a reasonable timeframe
+        return true;
     }
 
     public function isFutureTimesheet($month, $year, $calendar_type = 'gregorian')
     {
         if ($calendar_type === 'ethiopian') {
-            // Get current Ethiopian date
-            $currentEthDate = CalendarHelper::gregorianToEthiopian(date('Y-m-d'));
-            list($currentEthYear, $currentEthMonth) = explode('-', $currentEthDate);
+            // Convert Ethiopian date to Gregorian for comparison
+            $ethDate = sprintf('%04d-%02d-01', $year, $month);
+            $gcDate = CalendarHelper::ethiopianToGregorian($ethDate);
+            list($gcYear, $gcMonth) = explode('-', $gcDate);
 
-            return ($year > $currentEthYear) ||
-                ($year == $currentEthYear && $month > $currentEthMonth);
+            $currentYear = date('Y');
+            $currentMonth = date('n');
+
+            return ($gcYear > $currentYear) ||
+                ($gcYear == $currentYear && $gcMonth > $currentMonth);
         }
 
         // Gregorian calendar comparison
@@ -259,67 +431,4 @@ class Timesheet
         $days = cal_days_in_month(CAL_GREGORIAN, $month, $year);
         return new DateTime("$year-$month-$days");
     }
-
-    public function getSubmittedTimesheets($user_id)
-    {
-        $pdo = (new Database())->getConnection();
-
-        $stmt = $pdo->prepare("
-            SELECT t.*, SUM(te.total_hours) as total_hours
-            FROM timesheets t
-            LEFT JOIN timesheet_entries te ON t.timesheet_id = te.timesheet_id
-            WHERE t.user_id = ? AND t.status IN ('submitted', 'approved')
-            GROUP BY t.timesheet_id
-            ORDER BY t.year DESC, t.month DESC
-        ");
-        $stmt->execute([$user_id]);
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function getAllUserTimesheets($user_id, $month = null, $year = null, $calendar_type = null)
-    {
-        $pdo = $this->db->getConnection();
-
-        $sql = "
-        SELECT t.*, 
-               SUM(te.total_hours) as total_hours,
-               t.calendar_type,
-               t.created_at,
-               t.updated_at
-        FROM timesheets t
-        LEFT JOIN timesheet_entries te ON t.timesheet_id = te.timesheet_id
-        WHERE t.user_id = ?
-    ";
-
-        $params = [$user_id];
-        $conditions = [];
-
-        if ($month !== null) {
-            $conditions[] = "t.month = ?";
-            $params[] = $month;
-        }
-
-        if ($year !== null) {
-            $conditions[] = "t.year = ?";
-            $params[] = $year;
-        }
-
-        if ($calendar_type !== null) {
-            $conditions[] = "t.calendar_type = ?";
-            $params[] = $calendar_type;
-        }
-
-        if (!empty($conditions)) {
-            $sql .= " AND " . implode(" AND ", $conditions);
-        }
-
-        $sql .= " GROUP BY t.timesheet_id ORDER BY t.year DESC, t.month DESC";
-
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($params);
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
 }

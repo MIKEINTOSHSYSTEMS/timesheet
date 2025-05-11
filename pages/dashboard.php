@@ -15,7 +15,7 @@ $filterYear = isset($_GET['year']) ? (int)$_GET['year'] : null;
 $filterCalendar = isset($_GET['calendar']) ? $_GET['calendar'] : null;
 
 // Get all timesheets with filters
-$allTimesheets = $timesheet->getAllUserTimesheets($_SESSION['user_id'], $filterMonth, $filterYear, $filterCalendar);
+$allTimesheets = $timesheet->getAllUserTimesheets($_SESSION['user_id'], $filterMonth, $filterYear);
 
 // Get current timesheet status
 $currentTimesheet = $timesheet->getTimesheet($_SESSION['user_id'], $currentMonth, $currentYear);
@@ -38,7 +38,6 @@ $endYear = $currentYear + 1;
 
     <div class="row">
         <div class="col-md-4">
-            <!-- User Profile Card (unchanged) -->
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">User Profile</h5>
@@ -52,7 +51,6 @@ $endYear = $currentYear + 1;
                 </div>
             </div>
 
-            <!-- Timesheet Filters Card (unchanged) -->
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">Timesheet Filters</h5>
@@ -97,7 +95,6 @@ $endYear = $currentYear + 1;
         </div>
 
         <div class="col-md-8">
-            <!-- Current Month Timesheet Card (unchanged) -->
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">Current Month Timesheet</h5>
@@ -112,7 +109,10 @@ $endYear = $currentYear + 1;
                                 <?= ucfirst($currentTimesheet['calendar_type']) ?>
                             </span>
                             <?php if ($currentTimesheet['approved_at']): ?>
-                                <br><small>Approved on: <?= DateConverter::formatDate($currentTimesheet['approved_at'], 'M j, Y') ?></small>
+                                <br><small>Approved on: <?= DateConverter::formatDate($currentTimesheet['approved_at'], 'M j, Y H:i') ?></small>
+                            <?php endif; ?>
+                            <?php if ($currentTimesheet['updated_at']): ?>
+                                <br><small>Last updated: <?= DateConverter::formatDate($currentTimesheet['updated_at'], 'M j, Y H:i') ?></small>
                             <?php endif; ?>
                         </div>
 
@@ -150,7 +150,6 @@ $endYear = $currentYear + 1;
                 </div>
             </div>
 
-            <!-- All Timesheets Card (updated with new columns) -->
             <div class="card">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">All Timesheets</h5>
@@ -185,8 +184,8 @@ $endYear = $currentYear + 1;
                                         );
                                     ?>
                                         <tr>
-                                            <td><?= CalendarHelper::getMonthName($ts['month']) ?></td>
-                                            <td><?= $ts['year'] ?></td>
+                                            <td><?= $ts['display_month_name'] ?></td>
+                                            <td><?= $ts['display_year'] ?></td>
                                             <td>
                                                 <span class="badge bg-<?= $ts['calendar_type'] === 'ethiopian' ? 'primary' : 'secondary' ?>">
                                                     <?= ucfirst($ts['calendar_type']) ?>
