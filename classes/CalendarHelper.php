@@ -176,6 +176,147 @@ class CalendarHelper {
         // Ethiopian leap year calculation
         return ($year % 4) == 3;
     }
+
+    public static function displayDate($date, $format = 'Y-m-d')
+    {
+        if (self::isEthiopian()) {
+            if (strpos($date, '-') !== false) {
+                // Assume it's Gregorian if it has dashes
+                $ethDate = self::gregorianToEthiopian($date);
+                return self::formatEthiopianDate($ethDate, $format);
+            }
+            // Otherwise assume it's already Ethiopian
+            return self::formatEthiopianDate($date, $format);
+        }
+        // For Gregorian calendar
+        return date($format, strtotime($date));
+    }
+
+    private static function formatEthiopianDate($ethiopianDate, $format)
+    {
+        list($year, $month, $day) = explode('-', $ethiopianDate);
+
+        $replacements = [
+            'Y' => $year,
+            'y' => substr($year, -2),
+            'm' => str_pad($month, 2, '0', STR_PAD_LEFT),
+            'n' => $month,
+            'd' => str_pad($day, 2, '0', STR_PAD_LEFT),
+            'j' => $day,
+            'M' => self::getMonthName($month),
+            'F' => self::getMonthName($month),
+        ];
+
+        $formatted = $format;
+        foreach ($replacements as $key => $value) {
+            $formatted = str_replace($key, $value, $formatted);
+        }
+
+        return $formatted;
+    }
+
+    public static function displayMonthYear($month, $year)
+    {
+        $currentCalendar = self::isEthiopian() ? 'ethiopian' : 'gregorian';
+
+        // If the stored calendar type is different from current, convert
+        if (($year > 1900 && $year < 2100 && $currentCalendar === 'ethiopian') ||
+            ($year < 1900 && $currentCalendar === 'gregorian')
+        ) {
+
+            $dateStr = sprintf('%04d-%02d-15', $year, $month);
+            $converted = $currentCalendar === 'ethiopian'
+                ? self::gregorianToEthiopian($dateStr)
+                : self::ethiopianToGregorian($dateStr);
+
+            list($convYear, $convMonth) = explode('-', $converted);
+            return [
+                'month' => self::getMonthName($convMonth),
+                'year' => $convYear
+            ];
+        }
+
+        // Already in correct calendar system
+        return [
+            'month' => self::getMonthName($month),
+            'year' => $year
+        ];
+    }
+
+
+    public static function getDisplayDate($month, $year, $originalCalendar)
+    {
+        $currentCalendar = self::isEthiopian() ? 'ethiopian' : 'gregorian';
+
+        if ($currentCalendar === $originalCalendar) {
+            return [
+                'month' => $month,
+                'year' => $year,
+                'month_name' => self::getMonthName($month, $year)
+            ];
+        }
+
+        // Convert to current calendar system
+        $dateStr = sprintf('%04d-%02d-15', $year, $month);
+
+        if ($originalCalendar === 'ethiopian') {
+            $converted = self::ethiopianToGregorian($dateStr);
+        } else {
+            $converted = self::gregorianToEthiopian($dateStr);
+        }
+
+        list($convYear, $convMonth) = explode('-', $converted);
+
+        return [
+            'month' => (int)$convMonth,
+            'year' => (int)$convYear,
+            'month_name' => self::getMonthName((int)$convMonth, (int)$convYear)
+        ];
+    }
+
+    public static function getUrlParams($month, $year, $originalCalendar)
+    {
+        $currentCalendar = self::isEthiopian() ? 'ethiopian' : 'gregorian';
+
+        if ($currentCalendar === $originalCalendar) {
+            return [
+                'month' => $month,
+                'year' => $year
+            ];
+        }
+
+        // Convert to current calendar system for URL
+        $dateStr = sprintf('%04d-%02d-15', $year, $month);
+
+        if ($originalCalendar === 'ethiopian') {
+            $converted = self::ethiopianToGregorian($dateStr);
+        } else {
+            $converted = self::gregorianToEthiopian($dateStr);
+        }
+
+        list($convYear, $convMonth) = explode('-', $converted);
+
+        return [
+            'month' => (int)$convMonth,
+            'year' => (int)$convYear
+        ];
+    }
+
+        public static function shouldConvertCalendar($storedCalendarType)
+    {
+        $currentCalendar = self::isEthiopian() ? 'ethiopian' : 'gregorian';
+        
+        // Check if URL has explicit calendar type parameter
+        if (isset($_GET['cal'])) {
+            return $_GET['cal'] !== $currentCalendar;
+        }
+        
+        
+        // Default comparison
+        return $storedCalendarType !== $currentCalendar;
+    }
+
+
 }
 
 // Initialize the calendar helper

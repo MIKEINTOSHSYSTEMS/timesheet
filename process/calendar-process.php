@@ -6,6 +6,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+$_SESSION['ethiopian_calendar'] = isset($_POST['ethiopian_calendar']) && $_POST['ethiopian_calendar'] == '1';
+
 // Initialize redirect URL safely
 $redirect = BASE_URL . '/pages/dashboard.php';
 

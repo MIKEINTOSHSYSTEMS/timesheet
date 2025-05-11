@@ -1,5 +1,16 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+if (!headers_sent()) {
+    ob_start(); // Start output buffering
+}
+?>
+<?php
 require_once __DIR__ . '/../config/config.php';
+//require_once __DIR__ . '/../config/config.php';
+
 
 // Initialize calendar preference
 $ethiopianCalendar = $_SESSION['ethiopian_calendar'] ?? false;
@@ -7,8 +18,8 @@ $ethiopianCalendar = $_SESSION['ethiopian_calendar'] ?? false;
 // Initialize language switcher variables
 $translation = new Translation();
 $languages = [
-    'en' => 'English',
-    'am' => 'አማርኛ'
+'en' => 'English',
+'am' => 'አማርኛ'
 ];
 $currentLanguage = $_SESSION['language'] ?? 'en';
 ?>
@@ -31,40 +42,42 @@ $currentLanguage = $_SESSION['language'] ?? 'en';
         }
     </style>
     <?php if ($ethiopianCalendar): ?>
-        <link rel="stylesheet" href="<?= BASE_URL ?>/modules/calendar/calendar.css">
-        <script src="<?= BASE_URL ?>/modules/calendar/calendar.js"></script>
+        <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/calendar.css">
+        <script src="<?= BASE_URL ?>/assets/js/calendar.js"></script>
         <script>
             // Complete conversion functions as shown above
-            function convertToEthiopian(dateStr) {
-                const date = new Date(dateStr);
-                const ec = new EthiopianCalendar(date);
-                return {
-                    date: ec.GetECDate('Y-m-d'),
-                    year: ec.EC_year,
-                    month: ec.EC_month,
-                    day: ec.EC_day
-                };
-            }
+            /*
+                        function convertToEthiopian(dateStr) {
+                            const date = new Date(dateStr);
+                            const ec = new EthiopianCalendar(date);
+                            return {
+                                date: ec.GetECDate('Y-m-d'),
+                                year: ec.EC_year,
+                                month: ec.EC_month,
+                                day: ec.EC_day
+                            };
+                        }
 
-            function convertToGregorian(ethDateStr) {
-                const parts = ethDateStr.split('-');
-                const ecYear = parseInt(parts[0]);
-                const ecMonth = parseInt(parts[1]);
-                const ecDay = parseInt(parts[2]);
+                        function convertToGregorian(ethDateStr) {
+                            const parts = ethDateStr.split('-');
+                            const ecYear = parseInt(parts[0]);
+                            const ecMonth = parseInt(parts[1]);
+                            const ecDay = parseInt(parts[2]);
 
-                const ec = new EthiopianCalendar(new Date());
-                const gcDate = ec.ethiopianToGregorian(ecYear, ecMonth, ecDay);
+                            const ec = new EthiopianCalendar(new Date());
+                            const gcDate = ec.ethiopianToGregorian(ecYear, ecMonth, ecDay);
 
-                // Format as YYYY-MM-DD
-                const gcDateStr = `${gcDate.year}-${gcDate.month.toString().padStart(2, '0')}-${gcDate.day.toString().padStart(2, '0')}`;
-                return {
-                    date: gcDateStr,
-                    year: gcDate.year,
-                    month: gcDate.month,
-                    day: gcDate.day
-                };
-            }
+                            // Format as YYYY-MM-DD
+                            const gcDateStr = `${gcDate.year}-${gcDate.month.toString().padStart(2, '0')}-${gcDate.day.toString().padStart(2, '0')}`;
+                            return {
+                                date: gcDateStr,
+                                year: gcDate.year,
+                                month: gcDate.month,
+                                day: gcDate.day
+                            };
+                        }
 
+                        */
             // Helper function to update all date displays on the page
             function updateDateDisplays() {
                 document.querySelectorAll('[data-date]').forEach(element => {

@@ -42,7 +42,7 @@
                     <h5 class="mb-3">Help & Support</h5>
                     <ul class="list-unstyled">
                         <li class="mb-2"><i class="bi bi-envelope me-2"></i> <a href="mailto:hr@merqconsultancy.org" class="text-white-50">hr@merqconsultancy.org</a></li>
-                        <li class="mb-2"><i class="bi bi-telephone me-2"></i> <a href="tel:+251XXXXXXXXX" class="text-white-50">+251 XX XXX XXXX</a></li>
+                        <li class="mb-2"><i class="bi bi-telephone me-2"></i> <a href="tel:+251910810382" class="text-white-50">+251 910 810 382</a></li>
                     </ul>
                 </div>
             </div>
@@ -55,3 +55,8 @@
 </body>
 
 </html>
+<?php
+if (ob_get_level() > 0) {
+    ob_end_flush(); // Send the buffered output
+}
+?>

@@ -3,6 +3,7 @@
 // Error reporting
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
+//ini_set('error_log', __DIR__ . '/../logs/php-errors.log');
 error_reporting(E_ALL);
 
 
@@ -18,7 +19,8 @@ define('APP_VERSION', '1.0.0');
 define('BASE_URL', 'http://merqconsultancy/timesheet');
 
 //$_SESSION['ethiopian_calendar'] = $_SESSION['ethiopian_calendar'] ?? false;
-$_SESSION['ethiopian_calendar'] = $_SESSION['ethiopian_calendar'] ?? true;
+//$_SESSION['ethiopian_calendar'] = $_SESSION['ethiopian_calendar'] ?? true;
+$_SESSION['ethiopian_calendar'] = $_SESSION['ethiopian_calendar'] ?? false;
 
 //$_SESSION['success_message'] = 'Calendar preference updated successfully';
 

@@ -1,20 +1,23 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/auth-check.php';
-require_once __DIR__ . '/../includes/header.php';
 
-displayFlashMessages();
+// Handle all redirects before including header.php
+$redirect = null;
 
 $user_id = $_SESSION['user_id'];
+$is_admin = $_SESSION['user_role'] === 'admin';
 $timesheet = new Timesheet();
 $translation = new Translation();
 
-// Get current month/year or from request - convert if Ethiopian calendar is enabled
+// Get current month/year or from request
 $month = isset($_GET['month']) ? (int)$_GET['month'] : DateConverter::getCurrentMonth();
 $year = isset($_GET['year']) ? (int)$_GET['year'] : DateConverter::getCurrentYear();
 
-// Get existing timesheet data FIRST
+// Get existing timesheet data
 $currentTimesheet = $timesheet->getTimesheet($user_id, $month, $year);
+
+// After getting currentTimesheet
 $currentEntries = [];
 $canSubmit = true;
 
@@ -29,43 +32,53 @@ if ($currentTimesheet) {
     }
 }
 
-// Check if this is a future timesheet
-if ((new Timesheet())->isFutureTimesheet($month, $year) && $_SESSION['user_role'] !== 'admin') {
-    $_SESSION['error_message'] = 'You cannot create or edit timesheets for future months';
-    header("Location: " . BASE_URL . "/pages/dashboard.php");
-    exit;
+// Check if this is a future timesheet (for non-admins)
+if (!$is_admin && $timesheet->isFutureTimesheet($month, $year, CalendarHelper::isEthiopian() ? 'ethiopian' : 'gregorian')) {
+$_SESSION['error_message'] = 'You cannot create or edit timesheets for future months and years.';
+    $redirect = BASE_URL . "/pages/dashboard.php";
 }
 
 // Check if editing is allowed
-$canEdit = $timesheet->canEditTimesheet(
-    $currentTimesheet['timesheet_id'] ?? null,
-    $user_id,
-    $_SESSION['user_role'] === 'admin'
-);
+if (!$redirect) {
+    $canEdit = $timesheet->canEditTimesheet(
+        $currentTimesheet['timesheet_id'] ?? null,
+        $user_id,
+        $is_admin
+    );
 
-if (!$canEdit && $currentTimesheet && $currentTimesheet['status'] !== 'draft') {
-    $_SESSION['info_message'] = 'This timesheet can no longer be edited';
-    header("Location: " . BASE_URL . "/pages/dashboard.php");
+    if (!$canEdit && $currentTimesheet) {
+        if ($currentTimesheet['status'] !== 'draft') {
+            $_SESSION['info_message'] = 'Submitted timesheets cannot be edited';
+        } elseif ($timesheet->isFutureTimesheet($month, $year, $currentTimesheet['calendar_type'] ?? 'gregorian')) {
+            $_SESSION['error_message'] = 'Future timesheets cannot be edited';
+        }
+        $redirect = BASE_URL . "/pages/dashboard.php";
+    }
+}
+
+// Handle form submission before any output
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $result = $timesheet->saveTimesheet($_POST, $user_id, $month, $year, $is_admin);
+    if ($result) {
+        $_SESSION['success_message'] = 'Timesheet saved successfully';
+        $redirect = BASE_URL . "/pages/timesheet.php?month=$month&year=$year";
+    } else {
+        $redirect = BASE_URL . "/pages/timesheet.php?month=$month&year=$year";
+    }
+}
+
+// Perform any redirects before output starts
+if ($redirect) {
+    header("Location: $redirect");
     exit;
 }
 
-// Get user's projects
-$projects = $timesheet->getUserProjects($user_id);
+// Now we can safely include the header and output content
+require_once __DIR__ . '/../includes/header.php';
+displayFlashMessages();
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $result = $timesheet->saveTimesheet($_POST, $user_id, $month, $year);
-    if ($result) {
-        $_SESSION['success_message'] = 'Timesheet saved successfully';
-        if (!headers_sent()) {
-            header("Location: " . BASE_URL . "/pages/timesheet.php?month=$month&year=$year");
-            exit;
-        } else {
-            echo '<script>window.location.href="' . BASE_URL . '/pages/timesheet.php?month=' . $month . '&year=' . $year . '";</script>';
-            exit;
-        }
-    }
-}
+// Get user's projects (only if we're not redirecting)
+$projects = $timesheet->getUserProjects($user_id);
 
 // Get days in month - using CalendarHelper for Ethiopian support
 $daysInMonth = CalendarHelper::getDaysInMonth($month, $year);
@@ -109,9 +122,17 @@ $daysInMonth = CalendarHelper::getDaysInMonth($month, $year);
                         <div class="col-md-6">
                             <label class="form-label">Month:</label>
                             <select class="form-select" id="month-selector">
-                                <?php for ($m = 1; $m <= (CalendarHelper::isEthiopian() ? 13 : 12); $m++): ?>
-                                    <option value="<?= $m ?>" <?= $m == $month ? 'selected' : '' ?>>
-                                        <?= CalendarHelper::getMonthName($m, $year) ?>
+                                <?php
+                                $currentCalendar = CalendarHelper::isEthiopian() ? 'ethiopian' : 'gregorian';
+                                $monthCount = $currentCalendar === 'ethiopian' ? 13 : 12;
+
+                                for ($m = 1; $m <= $monthCount; $m++):
+                                    $selected = ($currentTimesheet && $currentTimesheet['calendar_type'] === $currentCalendar)
+                                        ? ($m == $currentTimesheet['month'] ? 'selected' : '')
+                                        : ($m == $month ? 'selected' : '');
+                                ?>
+                                    <option value="<?= $m ?>" <?= $selected ?>>
+                                        <?= CalendarHelper::getMonthName($m) ?>
                                     </option>
                                 <?php endfor; ?>
                             </select>
@@ -120,9 +141,19 @@ $daysInMonth = CalendarHelper::getDaysInMonth($month, $year);
                             <label class="form-label">Year:</label>
                             <select class="form-select" id="year-selector">
                                 <?php
-                                $currentYear = CalendarHelper::isEthiopian() ? DateConverter::getCurrentYear() : date('Y');
-                                for ($y = $currentYear - 5; $y <= $currentYear + 5; $y++): ?>
-                                    <option value="<?= $y ?>" <?= $y == $year ? 'selected' : '' ?>><?= $y ?></option>
+                                $currentYear = DateConverter::getCurrentYear();
+                                $startYear = $currentYear - 5;
+                                $endYear = $currentYear + 5;
+
+                                for ($y = $startYear; $y <= $endYear; $y++):
+                                    $selected = ($currentTimesheet && $currentTimesheet['calendar_type'] === $currentCalendar)
+                                        ? ($y == $currentTimesheet['year'] ? 'selected' : '')
+                                        : ($y == $year ? 'selected' : '');
+                                ?>
+                                    <option value="<?= $y ?>" <?= $selected ?>>
+                                        <?= $y ?>
+                                        <?= $currentCalendar === 'ethiopian' ? ' (E.C.)' : '' ?>
+                                    </option>
                                 <?php endfor; ?>
                             </select>
                         </div>
@@ -174,11 +205,21 @@ $daysInMonth = CalendarHelper::getDaysInMonth($month, $year);
                     </div>
 
                     <div class="text-end mt-3">
-                        <button type="submit" name="action" value="save" class="btn btn-primary">Save Draft</button>
-                        <?php if ($canSubmit): ?>
-                            <button type="submit" name="action" value="submit" class="btn btn-success">Submit</button>
-                        <?php else: ?>
+                        <?php if ($currentTimesheet && $currentTimesheet['status'] === 'submitted'): ?>
                             <button type="button" class="btn btn-secondary" disabled>Already Submitted</button>
+                        <?php elseif ($currentTimesheet && $currentTimesheet['status'] === 'approved'): ?>
+                            <button type="button" class="btn btn-success" disabled>Approved</button>
+                        <?php elseif (!$canEdit): ?>
+                            <?php if ($timesheet->isFutureTimesheet($month, $year, $currentTimesheet['calendar_type'] ?? 'gregorian')): ?>
+                                <button type="button" class="btn btn-warning" disabled>Future Timesheet</button>
+                            <?php else: ?>
+                                <button type="button" class="btn btn-warning" disabled>Read Only</button>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <button type="submit" name="action" value="save" class="btn btn-primary">
+                                <?= $currentTimesheet ? 'Update Draft' : 'Create Draft' ?>
+                            </button>
+                            <button type="submit" name="action" value="submit" class="btn btn-success">Submit</button>
                         <?php endif; ?>
                     </div>
                 </form>

@@ -51,9 +51,9 @@
                 <li><b>calendar.css</b> : styles for the table.</li>
             </ul>
             <pre>...
-&lt;<span class="tag">link</span> <span class="attr">rel</span>=<span class="string">"stylesheet"</span> <span class="attr">href</span>=<span class="string">"/modules/calendar/calendar.css"</span>&gt;
+&lt;<span class="tag">link</span> <span class="attr">rel</span>=<span class="string">"stylesheet"</span> <span class="attr">href</span>=<span class="string">"/assets/css/calendar.css"</span>&gt;
 ...
-&lt;<span class="red">script</span> <span class="attr">src</span>=<span class="string">"/modules/calendar/calendar.js"</span>&gt;&lt;/<span class="red">script</span>&gt;
+&lt;<span class="red">script</span> <span class="attr">src</span>=<span class="string">"/assets/js/calendar.js"</span>&gt;&lt;/<span class="red">script</span>&gt;
 &lt;<span class="red">script</span>&gt;
 
 <span class="comment">// Use the following code to use the converter</span>

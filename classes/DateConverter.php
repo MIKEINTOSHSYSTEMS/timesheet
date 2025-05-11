@@ -1,6 +1,31 @@
 <?php
 class DateConverter
 {
+
+    public static function convertMonthYear($month, $year, $fromCalendar, $toCalendar)
+    {
+        if ($fromCalendar === $toCalendar) {
+            return ['month' => $month, 'year' => $year];
+        }
+
+        // Create a sample date (using the 15th as a safe middle date)
+        $sampleDate = sprintf('%04d-%02d-15', $year, $month);
+
+        if ($fromCalendar === 'ethiopian' && $toCalendar === 'gregorian') {
+            $converted = self::toGregorian($sampleDate);
+            list($newYear, $newMonth) = explode('-', $converted);
+            return ['month' => (int)$newMonth, 'year' => (int)$newYear];
+        }
+
+        if ($fromCalendar === 'gregorian' && $toCalendar === 'ethiopian') {
+            $converted = self::toEthiopian($sampleDate);
+            list($newYear, $newMonth) = explode('-', $converted);
+            return ['month' => (int)$newMonth, 'year' => (int)$newYear];
+        }
+
+        return ['month' => $month, 'year' => $year];
+    }
+
     public static function toEthiopian($gregorianDate)
     {
         if (empty($gregorianDate)) return '';

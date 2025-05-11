@@ -34,6 +34,7 @@ $user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : null;
 $status = isset($_GET['status']) ? $_GET['status'] : null;
 
 // Build base query
+/*
 $query = "
     SELECT 
         ts.timesheet_id,
@@ -56,11 +57,51 @@ $query = "
         AND (ts.year BETWEEN YEAR(pa.start_date) AND YEAR(pa.end_date))
     WHERE ts.month = :month AND ts.year = :year
 ";
+*/
+
+$query = "
+    SELECT 
+        ts.timesheet_id,
+        u.user_id, 
+        CONCAT(u.first_name, ' ', u.last_name) as user_name,
+        p.project_id,
+        p.project_name,
+        SUM(te.total_hours) as total_hours,
+        ts.status,
+        ts.month,
+        ts.year,
+        ts.calendar_type,
+        pa.hours_allocated as allocated_hours
+    FROM timesheets ts
+    JOIN timesheet_entries te ON ts.timesheet_id = te.timesheet_id
+    JOIN users u ON ts.user_id = u.user_id
+    JOIN projects p ON te.project_id = p.project_id
+    LEFT JOIN project_allocations pa ON pa.user_id = ts.user_id 
+        AND pa.project_id = p.project_id
+    WHERE 1=1
+";
 
 $params = [
     ':month' => $month,
     ':year' => $year
 ];
+
+// Add filters based on current calendar view
+if (CalendarHelper::isEthiopian()) {
+    $query .= " AND ts.calendar_type = 'ethiopian'";
+} else {
+    $query .= " AND ts.calendar_type = 'gregorian'";
+}
+
+// Add month/year filters
+if ($month) {
+    $query .= " AND ts.month = :month";
+    $params[':month'] = $month;
+}
+if ($year) {
+    $query .= " AND ts.year = :year";
+    $params[':year'] = $year;
+}
 
 // Add role to filters
 $role = isset($_GET['role']) ? $_GET['role'] : null;
