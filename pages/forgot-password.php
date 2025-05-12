@@ -15,16 +15,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($_POST['email'])) {
             throw new Exception("Email is required");
         }
-        
-        $auth = new Auth();
-        //$resetToken = $auth->generatePasswordResetToken($_POST['email']);
-        
-        if ($resetToken) {
-            // In a real application, you would send an email with the reset link
-            $resetLink = BASE_URL . "/pages/reset-password.php?token=$resetToken";
-            
-            // For demo purposes, we'll just show the link
-            $success = "Password reset link has been generated. <a href='$resetLink'>Click here to reset your password</a>";
+
+        $user = new User();
+        $emailService = new EmailService();
+        $user_data = $user->getUserByEmail($_POST['email']);
+
+        if ($user_data) {
+            $token = $user->createPasswordResetToken($user_data['user_id']);
+            if ($token) {
+                $emailService->sendPasswordResetEmail($user_data['email'], $token);
+            }
+            $success = "If the email exists in our system, you'll receive a password reset link.";
         } else {
             $success = "If the email exists in our system, you'll receive a password reset link.";
         }

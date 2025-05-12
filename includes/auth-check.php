@@ -1,6 +1,11 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
 
+// Start the session
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'];
     $_SESSION['error_message'] = 'Please login to access this page';
@@ -15,6 +20,23 @@ if (!$user || !$user['is_active']) {
     $_SESSION['error_message'] = 'Your account is not active. Please contact administrator.';
     header('Location: ' . BASE_URL . '/login.php');
     exit;
+}
+
+// function to check if user has specific role on leave-approval.php
+function hasAnyRole($allowedRoles)
+{
+    $userRole = $_SESSION['role'] ?? '';
+    return in_array($userRole, $allowedRoles);
+}
+
+
+
+/*
+// Add this function to your auth check system
+function hasAnyRole($roles)
+{
+    $userRole = $_SESSION['role'] ?? '';
+    return in_array($userRole, $roles);
 }
 /*
 <?php

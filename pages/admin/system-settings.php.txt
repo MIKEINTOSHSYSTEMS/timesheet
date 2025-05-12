@@ -1,0 +1,218 @@
+<?php
+require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../includes/auth-check.php';
+require_once __DIR__ . '/../../includes/header.php';
+
+if (!hasRole('admin')) {
+    header('Location: ' . BASE_URL . '/pages/dashboard.php');
+    exit;
+}
+
+$system = new SystemSettings();
+$emailService = new EmailService();
+$error = '';
+$success = '';
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        // Update SMTP settings
+        if (isset($_POST['update_smtp'])) {
+            $settings = [
+                'SMTP_HOST' => $_POST['smtp_host'],
+                'SMTP_PORT' => $_POST['smtp_port'],
+                'SMTP_USERNAME' => $_POST['smtp_username'],
+                'SMTP_PASSWORD' => $_POST['smtp_password'],
+                'SMTP_SECURITY' => $_POST['smtp_security'],
+                'SMTP_FROM_EMAIL' => $_POST['smtp_from_email'],
+                'SMTP_FROM_NAME' => $_POST['smtp_from_name']
+            ];
+
+            foreach ($settings as $key => $value) {
+                $system->updateSetting($key, $value);
+            }
+
+            $success = 'SMTP settings updated successfully';
+        }
+
+        // Update OAuth settings
+        if (isset($_POST['update_oauth'])) {
+            $system->updateSetting('GOOGLE_OAUTH_CLIENT_ID', $_POST['google_client_id']);
+            $system->updateSetting('GOOGLE_OAUTH_CLIENT_SECRET', $_POST['google_client_secret']);
+            $success = 'OAuth settings updated successfully';
+        }
+
+        // Update email templates
+        if (isset($_POST['update_template'])) {
+            $template_id = $_POST['template_id'];
+            $system->updateEmailTemplate($template_id, [
+                'template_subject' => $_POST['template_subject'],
+                'template_body' => $_POST['template_body'],
+                'is_active' => isset($_POST['is_active']) ? 1 : 0
+            ]);
+            $success = 'Email template updated successfully';
+        }
+    } catch (Exception $e) {
+        $error = $e->getMessage();
+    }
+}
+
+// Get current settings
+$smtp_settings = $emailService->getSmtpSettings();
+$google_client_id = $system->getSetting('GOOGLE_OAUTH_CLIENT_ID');
+$google_client_secret = $system->getSetting('GOOGLE_OAUTH_CLIENT_SECRET');
+$templates = $system->getEmailTemplates();
+?>
+
+<div class="container mt-4">
+    <h1 class="mb-4">System Settings</h1>
+
+    <?php if ($error): ?>
+        <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+    <?php endif; ?>
+
+    <?php if ($success): ?>
+        <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
+    <?php endif; ?>
+
+    <!-- SMTP Settings -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Email Settings</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">SMTP Host</label>
+                        <input type="text" class="form-control" name="smtp_host"
+                            value="<?= htmlspecialchars($smtp_settings['SMTP_HOST'] ?? '') ?>" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">SMTP Port</label>
+                        <input type="number" class="form-control" name="smtp_port"
+                            value="<?= htmlspecialchars($smtp_settings['SMTP_PORT'] ?? '587') ?>" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">SMTP Username</label>
+                        <input type="text" class="form-control" name="smtp_username"
+                            value="<?= htmlspecialchars($smtp_settings['SMTP_USERNAME'] ?? '') ?>">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">SMTP Password</label>
+                        <input type="password" class="form-control" name="smtp_password"
+                            value="<?= htmlspecialchars($smtp_settings['SMTP_PASSWORD'] ?? '') ?>">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Security Protocol</label>
+                        <select class="form-select" name="smtp_security">
+                            <option value="tls" <?= ($smtp_settings['SMTP_SECURITY'] ?? 'tls') === 'tls' ? 'selected' : '' ?>>TLS</option>
+                            <option value="ssl" <?= ($smtp_settings['SMTP_SECURITY'] ?? '') === 'ssl' ? 'selected' : '' ?>>SSL</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">From Email</label>
+                        <input type="email" class="form-control" name="smtp_from_email"
+                            value="<?= htmlspecialchars($smtp_settings['SMTP_FROM_EMAIL'] ?? '') ?>" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">From Name</label>
+                        <input type="text" class="form-control" name="smtp_from_name"
+                            value="<?= htmlspecialchars($smtp_settings['SMTP_FROM_NAME'] ?? '') ?>" required>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="submit" name="update_smtp" class="btn btn-primary">
+                        Save SMTP Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Google OAuth Settings -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Google OAuth Integration</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Client ID</label>
+                        <input type="text" class="form-control" name="google_client_id"
+                            value="<?= htmlspecialchars($google_client_id ?? '') ?>">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Client Secret</label>
+                        <input type="password" class="form-control" name="google_client_secret"
+                            value="<?= htmlspecialchars($google_client_secret ?? '') ?>">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="submit" name="update_oauth" class="btn btn-primary">
+                        Save OAuth Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Email Templates -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Email Templates</h5>
+        </div>
+        <div class="card-body">
+            <div class="accordion" id="templatesAccordion">
+                <?php foreach ($templates as $template): ?>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#template<?= $template['template_id'] ?>">
+                                <?= htmlspecialchars($template['template_name']) ?>
+                            </button>
+                        </h2>
+                        <div id="template<?= $template['template_id'] ?>"
+                            class="accordion-collapse collapse">
+                            <div class="accordion-body">
+                                <form method="post">
+                                    <input type="hidden" name="template_id"
+                                        value="<?= $template['template_id'] ?>">
+                                    <div class="mb-3">
+                                        <label class="form-label">Subject</label>
+                                        <input type="text" class="form-control"
+                                            name="template_subject"
+                                            value="<?= htmlspecialchars($template['template_subject']) ?>" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Body</label>
+                                        <textarea class="form-control" name="template_body"
+                                            rows="8" required><?= htmlspecialchars($template['template_body']) ?></textarea>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox"
+                                            name="is_active"
+                                            id="active<?= $template['template_id'] ?>"
+                                            <?= $template['is_active'] ? 'checked' : '' ?>>
+                                        <label class="form-check-label"
+                                            for="active<?= $template['template_id'] ?>">
+                                            Active
+                                        </label>
+                                    </div>
+                                    <button type="submit" name="update_template"
+                                        class="btn btn-primary">
+                                        Update Template
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php require_once __DIR__ . '/../../includes/footer.php'; ?>

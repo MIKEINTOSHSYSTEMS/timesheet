@@ -31,3 +31,20 @@ require_once __DIR__ . '/../classes/User.php';
 require_once __DIR__ . '/../classes/Timesheet.php';
 require_once __DIR__ . '/../classes/Translation.php';
 require_once __DIR__ . '/../functions/helpers.php';
+
+// Google Auth constants
+
+define('GOOGLE_OAUTH_CLIENT_ID', getSetting('GOOGLE_OAUTH_CLIENT_ID'));
+define('GOOGLE_OAUTH_CLIENT_SECRET', getSetting('GOOGLE_OAUTH_CLIENT_SECRET'));
+
+// Add this function
+function getSetting($key)
+{
+    static $settings;
+    if (!$settings) {
+        $pdo = (new Database())->getConnection();
+        $stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings");
+        $settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+    }
+    return $settings[$key] ?? null;
+}

@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php if ($error): ?>
                         <div class="alert alert-danger"><?= e($error) ?></div>
                     <?php endif; ?>
-                    
+
                     <form method="POST">
                         <div class="mb-3">
                             <label for="email" class="form-label">Email</label>
@@ -54,12 +54,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label class="form-check-label" for="remember">Remember me</label>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Login</button>
+
+                        <!-- Add to login form with google Sign In-->
+                        <div class="text-center mt-4">
+                            <p>Or sign in with:</p>
+                            <a href="<?= BASE_URL ?>/auth/google" class="btn btn-outline-danger">
+                                <i class="fab fa-google"></i> Google
+                            </a>
+                        </div>
                     </form>
-                    
+
                     <div class="mt-3 text-center">
                         <a href="<?= BASE_URL ?>/pages/forgot-password.php">Forgot password?</a>
                     </div>
-                    
+
                     <?php if (file_exists(__DIR__ . '/../config/oauth-config.php')): ?>
                         <div class="mt-3 text-center">
                             <p class="mb-2">Or login with:</p>

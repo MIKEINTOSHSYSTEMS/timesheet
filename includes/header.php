@@ -18,8 +18,8 @@ $ethiopianCalendar = $_SESSION['ethiopian_calendar'] ?? false;
 // Initialize language switcher variables
 $translation = new Translation();
 $languages = [
-'en' => 'English',
-'am' => 'አማርኛ'
+    'en' => 'English',
+    'am' => 'አማርኛ'
 ];
 $currentLanguage = $_SESSION['language'] ?? 'en';
 ?>
@@ -31,7 +31,7 @@ $currentLanguage = $_SESSION['language'] ?? 'en';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= APP_NAME ?> - <?= $pageTitle ?? 'Timesheet' ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic&display=swap" rel="stylesheet">
@@ -39,6 +39,19 @@ $currentLanguage = $_SESSION['language'] ?? 'en';
     <style>
         .ethiopian-text {
             font-family: 'Noto Sans Ethiopic', sans-serif;
+        }
+
+        .icon-shape {
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s ease;
         }
     </style>
     <?php if ($ethiopianCalendar): ?>
@@ -153,6 +166,11 @@ $currentLanguage = $_SESSION['language'] ?? 'en';
                                 <i class="bi bi-journal-text"></i> <span class="d-none d-md-inline">Timesheet</span>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="<?= BASE_URL ?>/pages/leave.php">
+                                <i class="bi bi-person-walking"></i> <span class="d-none d-md-inline">Leave Request</span>
+                            </a>
+                        </li>
 
                         <?php if (hasRole('admin', 'manager')): ?>
                             <li class="nav-item dropdown">
@@ -161,14 +179,27 @@ $currentLanguage = $_SESSION['language'] ?? 'en';
                                 </a>
                                 <ul class="dropdown-menu" aria-labelledby="adminDropdown">
                                     <?php if (hasRole('admin')): ?>
-                                        <li><a class="dropdown-item" href="<?= BASE_URL ?>/pages/admin/users.php"><i class="bi bi-people"></i> User Management</a></li>
-                                        <li><a class="dropdown-item" href="<?= BASE_URL ?>/pages/admin/projects.php"><i class="bi bi-folder"></i> Project Management</a></li>
+                                        <li>Admin Management
+                                            <hr class="dropdown-divider">
+                                            Reports & Projects
+                                        </li>
+                                        <li><a class="dropdown-item" href="<?= BASE_URL ?>/pages/admin/projects.php"><i class="bi bi-folder"></i> Projects</a></li>
+                                        <li><a class="dropdown-item" href="<?= BASE_URL ?>/pages/admin/leave-management.php"><i class="bi bi-person-walking"></i>Leave Management</a></li>
+                                        <li><a class="dropdown-item" href="<?= BASE_URL ?>/pages/admin/reports.php"><i class="bi bi-graph-up"></i>Timesheet Reports</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                            System Management
+                                        </li>
+                                        <li><a class="dropdown-item" href="<?= BASE_URL ?>/pages/admin/users.php"><i class="bi bi-people"></i> Users</a></li>
+                                        <li><a class="dropdown-item" href="<?= BASE_URL ?>/pages/admin/roles.php"><i class="bi bi-key"></i> Roles</a></li>
+                                        <li><a class="dropdown-item" href="<?= BASE_URL ?>/pages/admin/permissions.php"><i class="bi bi-check"></i>Permissions</a></li>
                                         <li><a class="dropdown-item" href="<?= BASE_URL ?>/pages/admin/settings.php"><i class="bi bi-sliders"></i> System Settings</a></li>
                                         <li>
                                             <hr class="dropdown-divider">
+                                            Administrations
                                         </li>
                                     <?php endif; ?>
-                                    <li><a class="dropdown-item" href="<?= BASE_URL ?>/pages/admin/reports.php"><i class="bi bi-graph-up"></i> Reports</a></li>
+
                                     <li><a class="dropdown-item" href="<?= BASE_URL ?>/pages/admin/"><i class="bi bi-speedometer2"></i> Admin Dashboard</a></li>
                                 </ul>
                             </li>

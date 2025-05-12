@@ -228,5 +228,33 @@ $daysInMonth = CalendarHelper::getDaysInMonth($month, $year);
     </div>
 </div>
 
+<?php
+/*
+// When submitting timesheet
+$signature = [
+    'timesheet_id' => $timesheet_id,
+    'user_id' => $user_id,
+    'signature_type' => 'employee',
+    'signature_name' => $_POST['signature_name'],
+    'ip_address' => $_SERVER['REMOTE_ADDR'],
+    'user_agent' => $_SERVER['HTTP_USER_AGENT']
+];
+
+$db->insert('electronic_signatures', $signature);
+
+// When manager approves/rejects
+$approval_signature = [
+    'timesheet_id' => $timesheet_id,
+    'user_id' => $_SESSION['user_id'],
+    'signature_type' => 'approver',
+    'signature_name' => $_POST['approver_name'],
+    'ip_address' => $_SERVER['REMOTE_ADDR'],
+    'user_agent' => $_SERVER['HTTP_USER_AGENT']
+];
+
+$db->insert('electronic_signatures', $approval_signature);
+*/
+?>
+
 <script src="<?= BASE_URL ?>/assets/js/timesheet.js"></script>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
