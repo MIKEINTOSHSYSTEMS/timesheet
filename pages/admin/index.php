@@ -14,7 +14,7 @@ $db = new Database();
 $pdo = $db->getConnection();
 $user = new User();
 $timesheet = new Timesheet();
-$leaveManager = new LeaveManager();
+$leaveManager = new LeaveManager($pdo);
 
 // Get stats for dashboard
 $stats = [

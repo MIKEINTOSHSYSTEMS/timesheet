@@ -33,6 +33,9 @@ class Database {
     }
 }
 
+
+//$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
 /*
 <td><?= e($u['first_name'] . ' ' . e($u['last_name']) ?></td>
 class Database

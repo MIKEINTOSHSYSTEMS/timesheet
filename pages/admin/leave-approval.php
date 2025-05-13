@@ -2,9 +2,9 @@
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../includes/auth-check.php';
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../classes/Database.php';
 require_once __DIR__ . '/../../classes/LeaveManager.php';
 
-//if (!hasRole(['admin', 'manager'])) {
 // Update the role check at the top of leave-approval.php
 if (!hasRole('admin', 'manager')) {
     error_log("Access denied - user doesn't have required role");
@@ -14,7 +14,16 @@ if (!hasRole('admin', 'manager')) {
     exit;
 }
 
-$leaveManager = new LeaveManager();
+// Initialize database connection and LeaveManager
+try {
+    $db = new Database();
+    $pdo = $db->getConnection();
+    $leaveManager = new LeaveManager($pdo);
+} catch (PDOException $e) {
+    error_log("Database connection failed: " . $e->getMessage());
+    die("System error. Please try again later.");
+}
+
 $error = '';
 $success = '';
 
@@ -49,7 +58,7 @@ $pending_leaves = $leaveManager->getPendingLeaveRequests();
     <?php if ($error): ?>
         <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
-    
+
     <?php if ($success): ?>
         <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
     <?php endif; ?>
@@ -71,7 +80,7 @@ $pending_leaves = $leaveManager->getPendingLeaveRequests();
 
                             <dt class="col-sm-4">Dates:</dt>
                             <dd class="col-sm-8">
-                                <?= date('M d, Y', strtotime($leave_request['start_date'])) ?> - 
+                                <?= date('M d, Y', strtotime($leave_request['start_date'])) ?> -
                                 <?= date('M d, Y', strtotime($leave_request['end_date'])) ?>
                             </dd>
 
@@ -84,12 +93,12 @@ $pending_leaves = $leaveManager->getPendingLeaveRequests();
 
                         <form method="POST">
                             <input type="hidden" name="leave_id" value="<?= $leave_request['leave_request_id'] ?>">
-                            
+
                             <div class="mb-3">
                                 <label class="form-label">Rejection Reason (if rejecting)</label>
                                 <textarea class="form-control" name="rejection_reason" rows="3"></textarea>
                             </div>
-                            
+
                             <div class="d-grid gap-2">
                                 <button type="submit" name="approve" class="btn btn-success">
                                     Approve Leave
@@ -128,13 +137,13 @@ $pending_leaves = $leaveManager->getPendingLeaveRequests();
                                             <td><?= e($leave['first_name'] . ' ' . $leave['last_name']) ?></td>
                                             <td><?= e($leave['type_name']) ?></td>
                                             <td>
-                                                <?= date('M d', strtotime($leave['start_date'])) ?> - 
+                                                <?= date('M d', strtotime($leave['start_date'])) ?> -
                                                 <?= date('M d', strtotime($leave['end_date'])) ?>
                                             </td>
                                             <td><?= $leave['days_requested'] ?></td>
                                             <td>
-                                                <a href="?id=<?= $leave['leave_request_id'] ?>" 
-                                                   class="btn btn-sm btn-primary">
+                                                <a href="?id=<?= $leave['leave_request_id'] ?>"
+                                                    class="btn btn-sm btn-primary">
                                                     Review
                                                 </a>
                                             </td>

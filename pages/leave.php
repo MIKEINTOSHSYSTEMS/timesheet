@@ -2,9 +2,20 @@
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/auth-check.php';
 require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../classes/Database.php';
 require_once __DIR__ . '/../classes/LeaveManager.php';
 
-$leaveManager = new LeaveManager();
+// Initialize database connection
+try {
+    $db = new Database();
+    $pdo = $db->getConnection();
+
+    // Create LeaveManager instance with database connection
+    $leaveManager = new LeaveManager($pdo);
+} catch (PDOException $e) {
+    die("Database connection failed: " . $e->getMessage());
+}
+
 $user_id = $_SESSION['user_id'];
 $error = '';
 $success = '';
