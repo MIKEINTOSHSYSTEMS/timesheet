@@ -63,6 +63,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </a>
                         </div>
                     </form>
+                    <div class="mt-3 text-center">
+                        <p>Don't have an account? <a href="<?= BASE_URL ?>/pages/register.php">Register here</a></p>
 
                     <div class="mt-3 text-center">
                         <a href="<?= BASE_URL ?>/pages/forgot-password.php">Forgot password?</a>
