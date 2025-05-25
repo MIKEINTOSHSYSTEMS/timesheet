@@ -2,7 +2,7 @@
 
 <br>
 <p>
-    
+
 </p>
 </br>
 
@@ -16,7 +16,7 @@
                     <h5 class="mb-0"><?= APP_NAME ?></h5>
                 </div>
                 <p class="small">Version <?= APP_VERSION ?></p>
-                <p class="small">© <?= date('Y') ?> Merq Consultancy. All rights reserved.</p>
+                <p class="small">© <?= date('Y') ?> <a href="https://merqconsultancy.org">MERQ Consultancy</a>. All rights reserved.</p>
             </div>
 
             <!-- Quick Links -->
